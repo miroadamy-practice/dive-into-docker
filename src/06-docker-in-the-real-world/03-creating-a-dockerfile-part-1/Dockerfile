@@ -9,7 +9,7 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-LABEL maintainer="Miro Adamy <miro.adamy@gmail.com>" \
+LABEL maintainer="Miroslav Adamy <miro.adamy@gmail.com>" \
       version="1.0"
 
 CMD flask run --host=0.0.0.0 --port=5000
