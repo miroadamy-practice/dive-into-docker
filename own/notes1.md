@@ -15,7 +15,9 @@ docker run hello-world
 See
 https://store.docker.com/images/dotnet?tab=description
 
-## Chapter 6 - Docker in the real world
+# Chapter 6 - Docker in the real world
+
+## Creating a Docker file
 
 See ../src/06-docker-in-the-real-world/03-creating-a-dockerfile-part-1/Dockerfile
 
@@ -432,3 +434,78 @@ sudo service docker restart
 
 - will not get resurrected after stop or kill manually
 
+
+## Port Mapping 
+
+```
+➜  03-creating-a-dockerfile-part-1 git:(master) docker container run -it --rm -p 5000:5000 -e FLASK_APP=app.py -e FLASK_DEBUG=1 -v $PWD:/app --name web1 web1
+
+ * Serving Flask app "app.app"
+ * Forcing debug mode on
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 245-596-585
+ * Detected change in '/app/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 245-596-585
+172.17.0.1 - - [07/Jul/2018 15:23:57] "GET / HTTP/1.1" 200 -
+172.17.0.1 - - [07/Jul/2018 15:23:58] "GET / HTTP/1.1" 200 -
+ * Detected change in '/app/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 245-596-585
+172.17.0.1 - - [07/Jul/2018 15:24:04] "GET / HTTP/1.1" 200 -
+172.17.0.1 - - [07/Jul/2018 15:24:05] "GET / HTTP/1.1" 200 -
+
+
+-------
+➜  diveintodocker git:(master) curl -s localhost:5000
+2%                                                                                                                                                                                            ➜  diveintodocker git:(master) ✗ curl -s localhost:5000
+2%                                                                                                                                                                                            ➜  diveintodocker git:(master) ✗ curl -s localhost:5000
+3%                                                                                                                                                                                            ➜  diveintodocker git:(master) ✗ curl -s localhost:5000
+3%
+```
+volume overrides everything
+
+combination of copy in image + volume mount - ideal
+
+Alpine - used to have notify problem, use slim if so
+
+exec => run test suite, run generators
+
+On Linux
+
+docker exec -it XXX touch hi.txt
+
+=> hi.txt is owned by root
+
+run as
+
+docker container exec -it --user "$(id -u):$(id -g)" web1 touch hi.txt
+
+
+```
+➜  diveintodocker git:(master) ✗ docker container exec -it web1 sh
+/app # whoami
+root
+
+
+➜  diveintodocker git:(master) ✗ docker container exec -it --user "$(id -u):$(id -g)" web1 sh
+/app $ whoami
+whoami: unknown uid 501
+/app $ ls -la
+total 28
+drwxr-xr-x   10 501      dialout        320 Jul  7 16:13 .
+drwxr-xr-x    1 root     root          4096 Jul  7 15:23 ..
+-rwxr-xr-x    1 501      dialout        261 Jul  7 13:18 Dockerfile
+-rwxr-xr-x    1 501      dialout        264 Feb 21  2017 Dockerfile.finished
+-rwxr-xr-x    1 501      dialout          0 Feb 13  2017 __init__.py
+-rw-r--r--    1 501      dialout        103 Jul  7 15:23 __init__.pyc
+-rwxr-xr-x    1 501      dialout         95 Jul  7 15:23 app.py
+-rw-r--r--    1 501      dialout        328 Jul  7 15:23 app.pyc
+-rw-r--r--    1 501      dialout          0 Jul  7 16:13 hi.txt
+-rwxr-xr-x    1 501      dialout         12 Feb 13  2017 requirements.txt
+/app $
+```
