@@ -293,3 +293,142 @@ Successfully tagged web1:latest
     }
 ]
 ```
+
+## Explicit tag
+
+```
+➜  03-creating-a-dockerfile-part-1 git:(master) docker image ls | grep web1
+web1                                                             latest              bbe2a732d606        5 minutes ago       83.7MB
+➜  03-creating-a-dockerfile-part-1 git:(master) docker image build -t web1:1.0 .
+Sending build context to Docker daemon  5.632kB
+Step 1/8 : FROM python:2.7-alpine
+ ---> c57ed7d143f9
+Step 2/8 : RUN mkdir /app
+ ---> Using cache
+ ---> d682e10a7dea
+Step 3/8 : WORKDIR /app
+ ---> Using cache
+ ---> b68717c622fe
+Step 4/8 : COPY requirements.txt requirements.txt
+ ---> Using cache
+ ---> a87623ad7d3b
+Step 5/8 : RUN pip install -r requirements.txt
+ ---> Using cache
+ ---> 0e8d97cfeca8
+Step 6/8 : COPY . .
+ ---> Using cache
+ ---> d718352071f2
+Step 7/8 : LABEL maintainer="Miroslav Adamy <miro.adamy@gmail.com>"       version="1.0"
+ ---> Using cache
+ ---> e471d34fb3b7
+Step 8/8 : CMD flask run --host=0.0.0.0 --port=5000
+ ---> Using cache
+ ---> bbe2a732d606
+Successfully built bbe2a732d606
+Successfully tagged web1:1.0
+
+➜  03-creating-a-dockerfile-part-1 git:(master) docker image ls | grep web1
+web1                                                             1.0                 bbe2a732d606        5 minutes ago       83.7MB
+web1                                                             latest              bbe2a732d606        5 minutes ago       83.7MB
+
+```
+
+## Cleanup new style
+
+```
+docker image rm `docker image ls | grep '^<none' | awk '{print $3;}' `
+```
+
+# Running Flask
+
+```
+➜  diveintodocker git:(master) docker container run -it -p 5000:5000 web1
+Usage: flask run [OPTIONS]
+
+Error: Could not locate Flask application. You did not provide the FLASK_APP environment variable.
+
+For more information see http://flask.pocoo.org/docs/latest/quickstart/
+➜  diveintodocker git:(master) docker container run -it -p 5000:5000 -e FLASK_APP=app.py web1
+ * Serving Flask app "app.app"
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+
+ ```
+ => does not do much
+
+ ```
+➜  03-creating-a-dockerfile-part-1 git:(master) curl -s localhost:5000
+0%                                                                                                                                                                                            ➜  03-creating-a-dockerfile-part-1 git:(master) curl -s localhost:5000
+0%                                                                                                                                                                                            ➜  03-creating-a-dockerfile-part-1 git:(master) curl -s localhost:5000
+0%                                                                                                                                                                                            ➜  03-creating-a-dockerfile-part-1 git:(master) curl -s localhost:5000
+0%
+
+-----
+
+ ➜  diveintodocker git:(master) docker container run -it -p 5000:5000 -e FLASK_APP=app.py web1
+ * Serving Flask app "app.app"
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+172.17.0.1 - - [07/Jul/2018 14:57:27] "GET / HTTP/1.1" 200 -
+172.17.0.1 - - [07/Jul/2018 14:57:28] "GET /favicon.ico HTTP/1.1" 404 -
+172.17.0.1 - - [07/Jul/2018 14:57:35] "GET / HTTP/1.1" 200 -
+172.17.0.1 - - [07/Jul/2018 14:57:39] "GET / HTTP/1.1" 200 -
+172.17.0.1 - - [07/Jul/2018 14:57:41] "GET / HTTP/1.1" 200 -
+
+````
+
+
+Cleanup
+
+```
+➜  diveintodocker git:(master) docker container ls -a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                        PORTS               NAMES
+d852494f164f        web1                "/bin/sh -c 'flask r…"   3 minutes ago       Exited (130) 18 seconds ago                       clever_kare
+4bfd158602bf        web1                "/bin/sh -c 'flask r…"   4 minutes ago       Exited (2) 4 minutes ago                          trusting_allen
+➜  diveintodocker git:(master) docker container rm d852494f164f 4bfd158602bf
+d852494f164f
+4bfd158602bf
+➜  diveintodocker git:(master) docker container ls -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+
+
+```
+
+Run with name and rm
+
+```
+➜  diveintodocker git:(master) docker container run -it --name web1 --rm -p 5000:5000 -e FLASK_APP=app.py web1
+ * Serving Flask app "app.app"
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+172.17.0.1 - - [07/Jul/2018 15:02:05] "GET / HTTP/1.1" 200 -
+172.17.0.1 - - [07/Jul/2018 15:02:06] "GET / HTTP/1.1" 200 -
+
+# =======
+
+➜  03-creating-a-dockerfile-part-1 git:(master) docker container ls
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+f31c34719eb9        web1                "/bin/sh -c 'flask r…"   1 second ago        Up 8 seconds        0.0.0.0:5000->5000/tcp   web1
+➜  03-creating-a-dockerfile-part-1 git:(master) curl -s localhost:5000
+0%                                                                                                                                                                                            ➜  03-creating-a-dockerfile-part-1 git:(master) curl -s localhost:5000
+0%
+
+````
+Other
+
+* docker container logs web1
+* docker container logs -f web1
+* docker container stats web1
+
+## Start with random port 
+
+docker container run -it -d --rm -p 5000 -e FLASK_APP=app.py web1
+
+Restart (cannot have --rm)
+
+docker container run -it -d  -p 5000 -e FLASK_APP=app.py --restart on-failure web1
+
+=> will restart only when docker daemon dies
+
+Simulate via: (on linux)
+sudo service docker restart 
+
+- will not get resurrected after stop or kill manually
+
