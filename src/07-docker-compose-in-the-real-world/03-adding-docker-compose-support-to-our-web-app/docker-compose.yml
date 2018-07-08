@@ -10,9 +10,12 @@ services:
 
   web:
     build:  '.'
-    image:  'miroadamy/web:1.0-comp'
+    # Use this to force name image
+    image:  'miroadamy/web2:1.0-comp'
+
     depends_on:
       - 'redis'
+    
     env_file:
       - '.env'  
     ports:
