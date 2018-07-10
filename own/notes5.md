@@ -225,4 +225,173 @@ Keeps using same volumes
 11 carbon based life forms have sensed this website%
 ```
 
+## Up and build
+
+```
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose up --build -d
+Creating network "web2_default" with the default driver
+Building web
+Step 1/12 : FROM python:2.7-alpine
+ ---> c57ed7d143f9
+Step 2/12 : RUN mkdir /app
+ ---> Using cache
+ ---> 4475c6915969
+Step 3/12 : WORKDIR /app
+ ---> Using cache
+ ---> b1a204a8c9a8
+Step 4/12 : COPY requirements.txt requirements.txt
+ ---> Using cache
+ ---> 408d3a050ab4
+Step 5/12 : RUN pip install -r requirements.txt
+ ---> Using cache
+ ---> 5ae51fd5c28c
+Step 6/12 : COPY . .
+ ---> 5ab376e5f637
+Step 7/12 : LABEL maintainer="Nick Janetakis <nick.janetakis@gmail.com>"       version="2.0"
+ ---> Running in d272c94198d0
+Removing intermediate container d272c94198d0
+ ---> 1c6f25687023
+Step 8/12 : VOLUME ["/app/public"]
+ ---> Running in 6742ac258ac2
+Removing intermediate container 6742ac258ac2
+ ---> 854cbea006da
+Step 9/12 : COPY docker-entrypoint.sh /
+ ---> 953b2c1a63c5
+Step 10/12 : RUN chmod +x /docker-entrypoint.sh
+ ---> Running in a6e379569cf5
+Removing intermediate container a6e379569cf5
+ ---> 7cdc8ff5e70a
+Step 11/12 : ENTRYPOINT ["/docker-entrypoint.sh"]
+ ---> Running in 63e7beace326
+Removing intermediate container 63e7beace326
+ ---> 0adf1d8e368c
+Step 12/12 : CMD flask run --host=0.0.0.0 --port=5000
+ ---> Running in 7790c10c8ab6
+Removing intermediate container 7790c10c8ab6
+ ---> 64833cbf7d8c
+Successfully built 64833cbf7d8c
+Successfully tagged web2_web:latest
+Creating web2_redis_1 ... done
+Creating web2_web_1   ... done
+
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose ps
+    Name                  Command               State           Ports
+------------------------------------------------------------------------------
+web2_redis_1   docker-entrypoint.sh redis ...   Up      0.0.0.0:6379->6379/tcp
+web2_web_1     /docker-entrypoint.sh /bin ...   Up      0.0.0.0:5000->5000/tcp
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker container ls
+CONTAINER ID        IMAGE               COMMAND                  CREATED              STATUS              PORTS                    NAMES
+f61f9204fd1d        web2_web            "/docker-entrypoint.…"   About a minute ago   Up About a minute   0.0.0.0:5000->5000/tcp   web2_web_1
+b3f1759c3847        redis:3.2-alpine    "docker-entrypoint.s…"   About a minute ago   Up About a minute   0.0.0.0:6379->6379/tcp   web2_redis_1
+
+
+docker-compose logs
+
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose restart
+Restarting web2_web_1   ... done
+Restarting web2_redis_1 ... done
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose restart redis
+Restarting web2_redis_1 ... done
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose ps
+    Name                  Command               State           Ports
+------------------------------------------------------------------------------
+web2_redis_1   docker-entrypoint.sh redis ...   Up      0.0.0.0:6379->6379/tcp
+web2_web_1     /docker-entrypoint.sh /bin ...   Up      0.0.0.0:5000->5000/tcp
+
+
+```
+
+# Exec / Run
+
+no need to add -it 
+
+```
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose exec web ls -la
+total 48
+drwxr-xr-x   14 root     root           448 Jul  8 16:53 .
+drwxr-xr-x    1 root     root          4096 Jul  8 16:57 ..
+-rwxr-xr-x    1 root     root            14 Feb 21  2017 .dockerignore
+-rwxr-xr-x    1 root     root            78 Feb 26  2017 .env
+-rwxr-xr-x    1 root     root           389 Mar  6  2017 Dockerfile
+-rwxr-xr-x    1 root     root             0 Feb 13  2017 __init__.py
+-rw-r--r--    1 root     root           103 Jul  8 16:53 __init__.pyc
+-rwxr-xr-x    1 root     root           324 Mar  6  2017 app.py
+-rw-r--r--    1 root     root           636 Jul  8 16:53 app.pyc
+-rwxr-xr-x    1 root     root           378 Jul  8 16:47 docker-compose.yml
+-rwxr-xr-x    1 root     root           294 Feb 21  2017 docker-compose.yml.finished
+-rwxr-xr-x    1 root     root           178 Mar  2  2017 docker-entrypoint.sh
+drwxr-xr-x    2 root     root          4096 Jul  8 16:57 public
+-rwxr-xr-x    1 root     root            29 Feb 18  2017 requirements.txt
+
+
+
+```
+
+run - spans new container
+
+```
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker ps -a; docker-compose run redis redis-server --version; docker ps -a
+
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+f61f9204fd1d        web2_web            "/docker-entrypoint.…"   7 minutes ago       Up 3 minutes        0.0.0.0:5000->5000/tcp   web2_web_1
+b3f1759c3847        redis:3.2-alpine    "docker-entrypoint.s…"   7 minutes ago       Up 3 minutes        0.0.0.0:6379->6379/tcp   web2_redis_1
+
+
+Redis server v=3.2.12 sha=00000000:0 malloc=jemalloc-4.0.3 bits=64 build=b9631e2ac00332d
+
+
+CONTAINER ID        IMAGE               COMMAND                  CREATED                  STATUS                              PORTS                    NAMES
+687a6d8c417d        redis:3.2-alpine    "docker-entrypoint.s…"   Less than a second ago   Exited (0) Less than a second ago                            web2_redis_run_1
+f61f9204fd1d        web2_web            "/docker-entrypoint.…"   7 minutes ago            Up 3 minutes                        0.0.0.0:5000->5000/tcp   web2_web_1
+b3f1759c3847        redis:3.2-alpine    "docker-entrypoint.s…"   7 minutes ago            Up 3 minutes                        0.0.0.0:6379->6379/tcp   web2_redis_1
+```
+
+# Stop
+
+
+```
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose stop
+Stopping web2_web_1   ... done
+Stopping web2_redis_1 ... done
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose ps
+    Name                  Command                State     Ports
+----------------------------------------------------------------
+web2_redis_1   docker-entrypoint.sh redis ...   Exit 0
+web2_web_1     /docker-entrypoint.sh /bin ...   Exit 137
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose ps --services
+redis
+web
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose start redis
+Starting redis ... done
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose ps
+    Name                  Command                State             Ports
+---------------------------------------------------------------------------------
+web2_redis_1   docker-entrypoint.sh redis ...   Up         0.0.0.0:6379->6379/tcp
+web2_web_1     /docker-entrypoint.sh /bin ...   Exit 137
+
+
+```
+
+rm - get rid of stopped containers
+
+```
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker ps -a
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                     PORTS                    NAMES
+687a6d8c417d        redis:3.2-alpine    "docker-entrypoint.s…"   6 minutes ago       Exited (0) 6 minutes ago                            web2_redis_run_1
+f61f9204fd1d        web2_web            "/docker-entrypoint.…"   14 minutes ago      Up 2 minutes               0.0.0.0:5000->5000/tcp   web2_web_1
+b3f1759c3847        redis:3.2-alpine    "docker-entrypoint.s…"   14 minutes ago      Up About a minute          0.0.0.0:6379->6379/tcp   web2_redis_1
+
+➜  03-adding-docker-compose-support-to-our-web-app git:(master) ✗ docker-compose rm
+Going to remove web2_redis_run_1
+Are you sure? [yN] Y
+Removing web2_redis_run_1 ... done
+
+```
 
